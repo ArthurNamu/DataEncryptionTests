@@ -3,8 +3,22 @@ using System.Security.Cryptography.X509Certificates;
 using System.Security.Cryptography;
 using System.Text;
 using System.Runtime.ConstrainedExecution;
+using DataEncryptionTests;
 
 Console.WriteLine("=== RSA Encrypt/Decrypt Tool ===\n");
+
+
+//For hybrid cache starts here......
+string publicKeyPem = File.ReadAllText("G:\\Namu\\docs\\KSACCO\\pem\\public.pem");
+using var rsaPublic = RSA.Create();
+rsaPublic.ImportFromPem(publicKeyPem);
+
+// Load your RSA private key (for decryption)
+string privateKeyPem = File.ReadAllText("G:\\Namu\\docs\\KSACCO\\pem\\private.pem");
+using var rsaPrivate = RSA.Create();
+rsaPrivate.ImportFromPem(privateKeyPem);
+
+
 
 while (true)
 {
@@ -16,16 +30,21 @@ while (true)
 
     try
     {
-        if (IsBase64String(input))
+        if (IsForDecryption(input))
         {
             Console.WriteLine("\nDetected Base64 input — decrypting...\n");
-            string decrypted = DecryptBase64(input);
+
+            var decrypted = HybridCrypto.Decrypt(input,privateKeyPem);
+
+            //string decrypted = DecryptBase64(input);
             Console.WriteLine("Decrypted Text:\n" + decrypted);
         }
         else
         {
             Console.WriteLine("\nDetected plain text/JSON — encrypting...\n");
-            string encrypted = EncryptToBase64(input);
+
+            string encrypted = HybridCrypto.Encrypt(input,publicKeyPem);
+
             Console.WriteLine("Encrypted Base64:\n" + encrypted);
         }
     }
@@ -45,7 +64,14 @@ while (true)
     return Convert.TryFromBase64String(input, buffer, out _);
 }
 
- static string EncryptToBase64(string plainText)
+static bool IsForDecryption(string input)
+{
+    return input.Contains("EncryptedData");
+}
+
+
+
+static string EncryptToBase64(string plainText)
 {
     using RSA rsaEnc = RSA.Create();
     rsaEnc.ImportFromPem(File.ReadAllText("G:\\Namu\\docs\\KSACCO\\pem\\public.pem"));
