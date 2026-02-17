@@ -8,12 +8,26 @@ namespace DataEncryptionTests;
 
 public static class HybridCrypto
 {
+    public static string SignData(string plainText, string pemKey)
+    {
+        byte[] dataToSign = Encoding.UTF8.GetBytes(plainText);
+
+        using (RSA rsa = RSA.Create())
+        {
+            rsa.ImportFromPem(pemKey.ToCharArray());
+
+            byte[] signature = rsa.SignData(
+                dataToSign,
+                HashAlgorithmName.SHA256,
+                RSASignaturePadding.Pkcs1
+            );
+
+            return Convert.ToBase64String(signature);
+        }
+    }
     public static (byte[] EncryptedKey, byte[] IV, byte[] CipherText) Encrypt(string plaintext, RSA rsaPublicKey)
     {
 
-
-
-        // 1️⃣ Create AES key
         using var aes = Aes.Create();
         aes.KeySize = 256;
         aes.GenerateKey();
